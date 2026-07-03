@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import PlainTextResponse, StreamingResponse
@@ -41,7 +42,11 @@ class Stage5BatchIn(BaseModel):
 
 # ---------- 辅助 ----------
 
+_PID_RE = re.compile(r"^[0-9a-f]{8}$")
+
 def _project_or_404(req: Request, pid: str) -> dict:
+    if not _PID_RE.match(pid):
+        raise HTTPException(404, "项目不存在")
     try:
         return req.app.state.store.get_project(pid)
     except FileNotFoundError:
@@ -103,6 +108,8 @@ def update_mapping(pid: str, body: EpisodesMappingIn, req: Request):
 async def stage1_start(pid: str, body: Stage1In, req: Request):
     st = req.app.state
     p = _project_or_404(req, pid)
+    if st.runner.is_running(pid):
+        raise HTTPException(409, f"项目 {pid} 已有任务在运行")
     statuses = st.db.get_statuses(pid)
     targets = body.episodes or [
         e["episode"] for e in p["episodes"]
@@ -126,6 +133,7 @@ async def stage1_start(pid: str, body: Stage1In, req: Request):
 
 @router.post("/projects/{pid}/stage1/cancel")
 def stage1_cancel(pid: str, req: Request):
+    _project_or_404(req, pid)
     req.app.state.runner.cancel(pid)
     return {"ok": True}
 
@@ -134,6 +142,7 @@ def stage1_cancel(pid: str, req: Request):
 
 @router.get("/projects/{pid}/episodes/{ep}/script")
 def get_episode_script(pid: str, ep: int, req: Request):
+    _project_or_404(req, pid)
     store = req.app.state.store
     text = store.read(store.episode_script_path(pid, ep))
     if text is None:
@@ -142,6 +151,7 @@ def get_episode_script(pid: str, ep: int, req: Request):
 
 @router.put("/projects/{pid}/episodes/{ep}/script")
 def put_episode_script(pid: str, ep: int, body: ContentIn, req: Request):
+    _project_or_404(req, pid)
     store = req.app.state.store
     store.write(store.episode_script_path(pid, ep), body.content)
     return {"ok": True}
@@ -217,13 +227,16 @@ async def stage5_generate(pid: str, body: Stage5In, req: Request):
 async def stage5_start(pid: str, body: Stage5BatchIn, req: Request):
     st = req.app.state
     p = _project_or_404(req, pid)
-    targets = body.episodes or [e["episode"] for e in p["episodes"]]
+    _require_artifact(req, pid, "settings")
+    _require_artifact(req, pid, "outline")
+    targets = sorted(body.episodes or [e["episode"] for e in p["episodes"]])
 
     async def worker(ep: int) -> None:
         await _gen_one_new_episode(st, pid, ep, body.extra)
 
     try:
-        await st.runner.start(pid, targets, worker)
+        # 阶段⑤依赖前一集新剧本结尾，必须按集串行生成
+        await st.runner.start(pid, targets, worker, concurrency=1)
     except RuntimeError as e:
         raise HTTPException(409, str(e))
     return {"started": targets}
@@ -233,6 +246,7 @@ async def stage5_start(pid: str, body: Stage5BatchIn, req: Request):
 
 @router.get("/projects/{pid}/artifacts/{kind}")
 def get_artifact(pid: str, kind: str, req: Request):
+    _project_or_404(req, pid)
     store = req.app.state.store
     if kind not in ("analysis", "settings", "outline"):
         raise HTTPException(404, "未知产物类型")
@@ -243,6 +257,7 @@ def get_artifact(pid: str, kind: str, req: Request):
 
 @router.put("/projects/{pid}/artifacts/{kind}")
 def put_artifact(pid: str, kind: str, body: ContentIn, req: Request):
+    _project_or_404(req, pid)
     store = req.app.state.store
     if kind not in ("analysis", "settings", "outline"):
         raise HTTPException(404, "未知产物类型")
@@ -251,6 +266,7 @@ def put_artifact(pid: str, kind: str, body: ContentIn, req: Request):
 
 @router.get("/projects/{pid}/scripts/{ep}")
 def get_new_script(pid: str, ep: int, req: Request):
+    _project_or_404(req, pid)
     store = req.app.state.store
     text = store.read(store.new_script_path(pid, ep))
     if text is None:
@@ -259,6 +275,7 @@ def get_new_script(pid: str, ep: int, req: Request):
 
 @router.put("/projects/{pid}/scripts/{ep}")
 def put_new_script(pid: str, ep: int, body: ContentIn, req: Request):
+    _project_or_404(req, pid)
     store = req.app.state.store
     store.write(store.new_script_path(pid, ep), body.content)
     return {"ok": True}

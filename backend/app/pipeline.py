@@ -52,3 +52,81 @@ async def extract_episode(pid: str, ep: int, video_path: Path,
                 json.dumps({"episode": ep, "structure": structure},
                            ensure_ascii=False, indent=2))
     db.set_status(pid, ep, "done")
+
+
+SYSTEM_WRITER = "你是资深短剧编剧，精通竖屏短剧的节奏与钩子设计。"
+
+
+def chunk_list(items: list, size: int) -> list[list]:
+    return [items[i:i + size] for i in range(0, len(items), size)]
+
+
+def tail_lines(text: str, n: int = 30) -> str:
+    return "\n".join(text.splitlines()[-n:])
+
+
+def _join_scripts(scripts: list[tuple[int, str]]) -> str:
+    return "\n\n".join(f"=== 第{ep}集 ===\n{body}" for ep, body in scripts)
+
+
+async def generate_report(scripts: list[tuple[int, str]], llm,
+                          chunk_size: int = 20) -> str:
+    """阶段②：全剧拆解。集数多时先分段摘要再汇总。"""
+    if len(scripts) <= chunk_size:
+        material = _join_scripts(scripts)
+    else:
+        summaries = []
+        for chunk in chunk_list(scripts, chunk_size):
+            user = prompts.STAGE2_CHUNK_SUMMARY.format(
+                start=chunk[0][0], end=chunk[-1][0],
+                scripts=_join_scripts(chunk))
+            summaries.append(await llm.generate(SYSTEM_WRITER, user))
+        material = "\n\n".join(summaries)
+    user = prompts.STAGE2_REPORT.format(material=material)
+    return await llm.generate(SYSTEM_WRITER, user)
+
+
+async def suggest_themes(report: str, llm) -> str:
+    return await llm.generate(
+        SYSTEM_WRITER, prompts.STAGE3_SUGGEST.format(report=report))
+
+
+async def refine_settings(report: str, draft: str, llm) -> str:
+    return await llm.generate(
+        SYSTEM_WRITER, prompts.STAGE3_REFINE.format(report=report, draft=draft))
+
+
+async def generate_outline(report: str, settings: str,
+                           episode_count: int, llm) -> str:
+    return await llm.generate(
+        SYSTEM_WRITER,
+        prompts.STAGE4_OUTLINE.format(
+            report=report, settings=settings, episode_count=episode_count))
+
+
+def extract_outline_section(outline: str, ep: int) -> str:
+    """截取大纲中 `## 第N集` 小节；找不到则返回全文。"""
+    lines = outline.splitlines()
+    start = end = None
+    header = re.compile(rf"^##\s*第{ep}集")
+    any_header = re.compile(r"^##\s*第\d+集")
+    for i, line in enumerate(lines):
+        if start is None and header.match(line.strip()):
+            start = i
+        elif start is not None and any_header.match(line.strip()):
+            end = i
+            break
+    if start is None:
+        return outline
+    return "\n".join(lines[start:end]).strip()
+
+
+async def generate_new_episode(ep: int, original_script: str,
+                               outline_section: str, settings: str,
+                               prev_ending: str, extra: str, llm) -> str:
+    extra_line = f"- 额外要求：{extra}" if extra else ""
+    user = prompts.STAGE5_SCRIPT.format(
+        episode=ep, settings=settings, outline_section=outline_section,
+        prev_ending=prev_ending or "（本集为第一集，无上一集）",
+        original_script=original_script, extra=extra_line)
+    return await llm.generate(SYSTEM_WRITER, user)

@@ -1,0 +1,19 @@
+gemini:
+  api_key: "YOUR_GEMINI_API_KEY"
+  model: "gemini-2.5-pro"
+
+text_llm:
+  provider: "deepseek"          # 当前使用的文本模型，对应 providers 里的键
+  providers:
+    deepseek:
+      base_url: "https://api.deepseek.com/v1"
+      api_key: "YOUR_KEY"
+      model: "deepseek-chat"
+    gemini:
+      base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
+      api_key: "YOUR_GEMINI_API_KEY"
+      model: "gemini-2.5-pro"
+
+concurrency: 3
+retries: 2
+data_dir: "data"

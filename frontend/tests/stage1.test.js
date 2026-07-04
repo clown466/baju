@@ -73,6 +73,30 @@ test('编辑并保存集数映射', async () => {
   ])
 })
 
+test('保存集数映射失败时保留编辑状态并展示错误', async () => {
+  api.exportUrl.mockReturnValue('#')
+  api.updateMapping.mockRejectedValue(new Error('保存失败'))
+  const wrapper = mount(Stage1Extract, opts(makeProject()))
+  await button(wrapper, '调整集数对应').trigger('click')
+  await button(wrapper, '保存集数对应').trigger('click')
+  await flushPromises()
+  expect(wrapper.find('.error').text()).toContain('保存失败')
+  expect(button(wrapper, '保存集数对应')).toBeDefined()
+  expect(wrapper.findAll('td input').length).toBe(3)
+})
+
+test('集数为空时提示校验错误且不调用接口', async () => {
+  api.exportUrl.mockReturnValue('#')
+  const wrapper = mount(Stage1Extract, opts(makeProject()))
+  await button(wrapper, '调整集数对应').trigger('click')
+  await wrapper.findAll('td input')[0].setValue('')
+  await button(wrapper, '保存集数对应').trigger('click')
+  await flushPromises()
+  expect(api.updateMapping).not.toHaveBeenCalled()
+  expect(wrapper.find('.error').text()).toContain('集数必须为正整数')
+  expect(button(wrapper, '保存集数对应')).toBeDefined()
+})
+
 test('查看并保存单集剧本', async () => {
   api.exportUrl.mockReturnValue('#')
   api.getEpisodeScript.mockResolvedValue({ content: '1-1 日 内 客厅' })

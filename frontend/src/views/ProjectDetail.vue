@@ -11,10 +11,16 @@ const props = defineProps({ pid: { type: String, required: true } })
 
 const project = ref(null)
 const tab = ref('stage1')
+const error = ref('')
 let unsubscribe = null
 
 async function refresh() {
-  project.value = await api.getProject(props.pid)
+  try {
+    project.value = await api.getProject(props.pid)
+    error.value = ''
+  } catch (e) {
+    error.value = e.message
+  }
 }
 provide('refresh', refresh)
 
@@ -52,5 +58,6 @@ const tabs = [
                  generate-label="生成逐集大纲" />
     <Stage5Scripts v-else :pid="pid" :project="project" />
   </div>
+  <p v-else-if="error" class="error">{{ error }}</p>
   <p v-else class="muted">加载中…</p>
 </template>

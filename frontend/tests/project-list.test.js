@@ -17,6 +17,13 @@ test('加载并展示项目列表', async () => {
   expect(wrapper.text()).toContain('2 集')
 })
 
+test('加载失败展示错误', async () => {
+  api.listProjects.mockRejectedValue(new Error('网络错误'))
+  const wrapper = mount(ProjectList, { global: { stubs } })
+  await flushPromises()
+  expect(wrapper.find('.error').text()).toContain('网络错误')
+})
+
 test('创建项目后刷新列表', async () => {
   api.listProjects.mockResolvedValue([])
   api.createProject.mockResolvedValue({ id: 'deadbeef' })

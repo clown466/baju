@@ -41,8 +41,20 @@ function startEditMapping() {
   editingMapping.value = true
 }
 async function saveMapping() {
-  await call(() => api.updateMapping(props.pid, mappingDraft.value))
-  editingMapping.value = false
+  error.value = ''
+  const invalid = mappingDraft.value.some(
+    (row) => !Number.isInteger(row.episode) || row.episode < 1)
+  if (invalid) {
+    error.value = '集数必须为正整数'
+    return
+  }
+  try {
+    await api.updateMapping(props.pid, mappingDraft.value)
+    await refresh()
+    editingMapping.value = false
+  } catch (e) {
+    error.value = e.message
+  }
 }
 
 async function view(ep) {

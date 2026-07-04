@@ -8,7 +8,12 @@ const videoDir = ref('')
 const error = ref('')
 
 async function load() {
-  projects.value = await api.listProjects()
+  try {
+    projects.value = await api.listProjects()
+    error.value = ''
+  } catch (e) {
+    error.value = e.message
+  }
 }
 
 async function create() {

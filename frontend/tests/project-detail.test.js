@@ -39,6 +39,15 @@ test('SSE 事件触发刷新，卸载时取消订阅', async () => {
   expect(stop).toHaveBeenCalled()
 })
 
+test('加载失败展示错误信息', async () => {
+  api.getProject.mockRejectedValue(new Error('后端未启动'))
+  sse.subscribeEvents.mockReturnValue(vi.fn())
+  const wrapper = shallowMount(ProjectDetail, { props: { pid: 'deadbeef' } })
+  await flushPromises()
+  expect(wrapper.find('.error').text()).toContain('后端未启动')
+  expect(wrapper.text()).not.toContain('加载中')
+})
+
 test('切换页签渲染对应组件', async () => {
   api.getProject.mockResolvedValue(project)
   sse.subscribeEvents.mockReturnValue(vi.fn())

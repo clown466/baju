@@ -13,6 +13,8 @@ class ProviderConfig(BaseModel):
 class GeminiConfig(BaseModel):
     api_key: str
     model: str = "gemini-2.5-pro"
+    base_url: str | None = None  # 中转站原生通道地址；None 表示 Google 官方
+    upload: str = "files"  # files=Files API（原生密钥）；inline=内联 base64（中转站）
 
 
 class TextLLMConfig(BaseModel):

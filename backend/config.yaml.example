@@ -1,6 +1,9 @@
 gemini:
   api_key: "YOUR_GEMINI_API_KEY"
   model: "gemini-2.5-pro"
+  # 可选：走中转站的原生 Gemini 路由（new-api 等），并用内联上传替代 Files API。
+  # base_url: "https://your-proxy.example.com"
+  # upload: "inline"        # files=Files API（默认，原生密钥）；inline=内联（≤19MB/集）
 
 text_llm:
   provider: "deepseek"          # 当前使用的文本模型，对应 providers 里的键

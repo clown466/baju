@@ -22,7 +22,9 @@ def create_app(cfg: AppConfig, gemini=None, text_llm=None) -> FastAPI:
     app.state.db = StatusDB(data_dir / "status.db")
     app.state.bus = EventBus()
     app.state.runner = BatchRunner(cfg.concurrency, app.state.bus)
-    app.state.gemini = gemini or GeminiVideo(cfg.gemini.api_key, cfg.gemini.model)
+    app.state.gemini = gemini or GeminiVideo(
+        cfg.gemini.api_key, cfg.gemini.model,
+        base_url=cfg.gemini.base_url, upload=cfg.gemini.upload)
     app.state.text_llm = text_llm or make_text_llm(cfg)
     app.include_router(router)
     return app

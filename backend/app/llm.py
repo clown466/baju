@@ -57,18 +57,66 @@ def make_text_llm(cfg: AppConfig) -> TextLLM:
 
 
 class GeminiVideo:
-    """Gemini 原生视频通道：Files API 上传 + 分析。SDK 为同步接口，用线程包装。"""
+    """Gemini 原生视频通道。
+
+    upload="files"：Files API 上传（Google 原生密钥）。
+    upload="inline"：视频字节内联进 generateContent（适用于不代理
+    Files API 的 OpenAI 中转站，受单次请求约 20MB 限制）。
+    base_url 可指向中转站的原生 Gemini 路由；None 表示 Google 官方。
+    """
 
     UPLOAD_TIMEOUT = 600  # 等待文件 ACTIVE 的秒数上限
+    INLINE_LIMIT = 19 * 1024 * 1024  # 内联上传大小上限（字节）
 
-    def __init__(self, api_key: str, model: str):
+    MIME_MAP = {
+        ".mp4": "video/mp4", ".mkv": "video/x-matroska",
+        ".mov": "video/quicktime", ".avi": "video/x-msvideo",
+        ".webm": "video/webm", ".ts": "video/mp2t",
+        ".flv": "video/x-flv", ".wmv": "video/x-ms-wmv",
+        ".3gp": "video/3gpp", ".mpg": "video/mpeg", ".mpeg": "video/mpeg",
+    }
+
+    def __init__(self, api_key: str, model: str,
+                 base_url: str | None = None, upload: str = "files"):
         self.api_key = api_key
         self.model = model
+        self.base_url = base_url
+        self.upload = upload
 
-    def _analyze_sync(self, video_path: Path, prompt: str) -> str:
+    @classmethod
+    def _mime_for(cls, filename: str) -> str:
+        return cls.MIME_MAP.get(Path(filename).suffix.lower(), "video/mp4")
+
+    def _client(self):
         from google import genai
 
-        client = genai.Client(api_key=self.api_key)
+        if self.base_url:
+            return genai.Client(
+                api_key=self.api_key,
+                http_options={"base_url": self.base_url})
+        return genai.Client(api_key=self.api_key)
+
+    def _analyze_inline_sync(self, video_path: Path, prompt: str) -> str:
+        size = video_path.stat().st_size
+        if size > self.INLINE_LIMIT:
+            raise RuntimeError(
+                f"视频 {video_path.name}（{size / 1024 / 1024:.1f}MB）超过"
+                f"内联上传上限 {self.INLINE_LIMIT / 1024 / 1024:.0f}MB。"
+                "请压缩视频，或改用 Google 原生密钥（upload: files）。")
+        from google.genai import types
+
+        client = self._client()
+        part = types.Part.from_bytes(
+            data=video_path.read_bytes(),
+            mime_type=self._mime_for(video_path.name))
+        resp = client.models.generate_content(
+            model=self.model, contents=[part, prompt])
+        return resp.text
+
+    def _analyze_sync(self, video_path: Path, prompt: str) -> str:
+        if self.upload == "inline":
+            return self._analyze_inline_sync(video_path, prompt)
+        client = self._client()
         f = client.files.upload(file=str(video_path))
         try:
             deadline = time.monotonic() + self.UPLOAD_TIMEOUT

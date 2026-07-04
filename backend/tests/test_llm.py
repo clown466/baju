@@ -47,3 +47,23 @@ async def test_with_retry_exhausted():
         raise RuntimeError("boom")
     with pytest.raises(RuntimeError):
         await with_retry(always_fail, attempts=2, base_delay=0.01)
+
+
+def test_gemini_inline_size_guard(tmp_path):
+    """内联模式下超过大小上限直接报错，不调用 SDK。"""
+    from pathlib import Path
+    from app.llm import GeminiVideo
+
+    video = tmp_path / "ep1.mp4"
+    video.write_bytes(b"x" * 1024)
+    g = GeminiVideo("sk", "m", upload="inline")
+    g.INLINE_LIMIT = 100  # 压低上限便于测试
+    with pytest.raises(RuntimeError, match="内联上传"):
+        g._analyze_inline_sync(Path(video), "prompt")
+
+
+def test_gemini_mime_type():
+    from app.llm import GeminiVideo
+    assert GeminiVideo._mime_for("a.mp4") == "video/mp4"
+    assert GeminiVideo._mime_for("b.MKV") == "video/x-matroska"
+    assert GeminiVideo._mime_for("c.unknown") == "video/mp4"

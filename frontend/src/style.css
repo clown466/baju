@@ -1,0 +1,19 @@
+body { margin: 0; font-family: system-ui, "Microsoft YaHei", sans-serif; color: #222; }
+.topbar { padding: 12px 24px; background: #1f2733; }
+.topbar a { color: #fff; text-decoration: none; font-weight: 600; }
+main { max-width: 960px; margin: 0 auto; padding: 16px 24px 64px; }
+button { margin: 2px 4px 2px 0; padding: 4px 12px; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+input, textarea { width: 100%; box-sizing: border-box; padding: 6px 8px; margin: 4px 0; }
+table.episodes { width: 100%; border-collapse: collapse; margin-top: 12px; }
+table.episodes th, table.episodes td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+.tabs { margin: 12px 0; border-bottom: 2px solid #ddd; }
+.tabs button { border: none; background: none; padding: 8px 16px; }
+.tabs button.active { border-bottom: 2px solid #1f2733; font-weight: 600; }
+.error { color: #c0392b; }
+.muted { color: #888; }
+.status-done { color: #27ae60; }
+.status-failed { color: #c0392b; }
+.status-analyzing, .status-uploading { color: #e67e22; }
+.markdown { line-height: 1.7; }
+textarea { font-family: inherit; }

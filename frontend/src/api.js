@@ -51,3 +51,6 @@ export const putNewScript = (pid, ep, content) =>
   http('PUT', `/api/projects/${pid}/scripts/${ep}`, { content })
 
 export const exportUrl = (pid, which) => `/api/projects/${pid}/export?which=${which}`
+
+export const getSettings = () => http('GET', '/api/settings')
+export const putSettings = (settings) => http('PUT', '/api/settings', settings)

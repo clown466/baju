@@ -11,13 +11,15 @@ from app.llm import GeminiVideo, make_text_llm
 from app.storage import ProjectStore
 
 
-def create_app(cfg: AppConfig, gemini=None, text_llm=None) -> FastAPI:
+def create_app(cfg: AppConfig, gemini=None, text_llm=None,
+               config_path: str | Path = "config.yaml") -> FastAPI:
     app = FastAPI(title="短剧扒剧与仿写")
     app.add_middleware(
         CORSMiddleware, allow_origins=["*"],
         allow_methods=["*"], allow_headers=["*"])
     data_dir = Path(cfg.data_dir)
     app.state.cfg = cfg
+    app.state.config_path = Path(config_path)
     app.state.store = ProjectStore(data_dir)
     app.state.db = StatusDB(data_dir / "status.db")
     app.state.bus = EventBus()

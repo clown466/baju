@@ -85,3 +85,42 @@ async def test_missing_resources(client, video_dir):
     assert r.status_code == 404
     r = await client.get("/api/projects/nonexist")
     assert r.status_code == 404
+
+
+# ---------- 模型设置 ----------
+
+async def test_get_settings(client):
+    r = await client.get("/api/settings")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["gemini"]["api_key"] == "gk"
+    assert data["text_llm"]["provider"] == "fake"
+    assert data["text_llm"]["providers"]["fake"]["base_url"] == "http://x"
+
+
+async def test_put_settings_updates_and_persists(client):
+    body = {
+        "gemini": {"api_key": "new-gk", "model": "g2",
+                   "base_url": "https://proxy.example.com", "upload": "inline"},
+        "text_llm": {"provider": "lemon",
+                     "providers": {"lemon": {"base_url": "https://l/v1",
+                                             "api_key": "sk-1", "model": "m1"}}},
+    }
+    r = await client.put("/api/settings", json=body)
+    assert r.status_code == 200
+    r = await client.get("/api/settings")
+    data = r.json()
+    assert data["gemini"]["api_key"] == "new-gk"
+    assert data["gemini"]["upload"] == "inline"
+    assert data["text_llm"]["provider"] == "lemon"
+
+
+async def test_put_settings_invalid_provider(client):
+    body = {
+        "gemini": {"api_key": "gk", "model": "m"},
+        "text_llm": {"provider": "nope",
+                     "providers": {"fake": {"base_url": "http://x",
+                                            "api_key": "k", "model": "m"}}},
+    }
+    r = await client.put("/api/settings", json=body)
+    assert r.status_code == 400

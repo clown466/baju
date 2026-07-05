@@ -50,7 +50,8 @@ def video_dir(tmp_path: Path) -> Path:
 @pytest.fixture
 async def client(tmp_path: Path):
     cfg = AppConfig.model_validate({**CFG, "data_dir": str(tmp_path / "data")})
-    app = create_app(cfg, gemini=FakeGemini(), text_llm=FakeTextLLM())
+    app = create_app(cfg, gemini=FakeGemini(), text_llm=FakeTextLLM(),
+                     config_path=tmp_path / "config.yaml")
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://t") as c:
         yield c

@@ -78,6 +78,48 @@ def _require_artifact(req: Request, pid: str, kind: str) -> str:
     return text
 
 
+# ---------- 模型设置 ----------
+
+class SettingsIn(BaseModel):
+    gemini: dict
+    text_llm: dict
+
+
+def _settings_payload(cfg) -> dict:
+    return {"gemini": cfg.gemini.model_dump(),
+            "text_llm": cfg.text_llm.model_dump()}
+
+
+@router.get("/settings")
+def get_settings(req: Request):
+    return _settings_payload(req.app.state.cfg)
+
+
+@router.put("/settings")
+def put_settings(body: SettingsIn, req: Request):
+    from pydantic import ValidationError
+
+    from app.config import AppConfig, save_config
+    from app.llm import GeminiVideo, make_text_llm
+
+    st = req.app.state
+    try:
+        cfg = AppConfig.model_validate({
+            **st.cfg.model_dump(),
+            "gemini": body.gemini, "text_llm": body.text_llm})
+    except ValidationError as e:
+        raise HTTPException(400, f"配置无效：{e.errors()[0].get('msg', '')}")
+    if cfg.text_llm.provider not in cfg.text_llm.providers:
+        raise HTTPException(400, "当前选择的文本服务商不在服务商列表中")
+    save_config(cfg, st.config_path)
+    st.cfg = cfg
+    st.gemini = GeminiVideo(cfg.gemini.api_key, cfg.gemini.model,
+                            base_url=cfg.gemini.base_url,
+                            upload=cfg.gemini.upload)
+    st.text_llm = make_text_llm(cfg)
+    return _settings_payload(cfg)
+
+
 # ---------- 项目 ----------
 
 @router.post("/projects")

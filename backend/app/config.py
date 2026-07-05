@@ -36,3 +36,9 @@ class AppConfig(BaseModel):
 def load_config(path: str | Path = "config.yaml") -> AppConfig:
     data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     return AppConfig.model_validate(data)
+
+
+def save_config(cfg: AppConfig, path: str | Path = "config.yaml") -> None:
+    Path(path).write_text(
+        yaml.safe_dump(cfg.model_dump(), allow_unicode=True, sort_keys=False),
+        encoding="utf-8")

@@ -33,6 +33,7 @@ onMounted(load)
 
 <template>
   <h1>项目列表</h1>
+  <p><router-link to="/settings">⚙ 模型设置</router-link></p>
   <ul class="projects">
     <li v-for="p in projects" :key="p.id">
       <router-link :to="`/projects/${p.id}`">{{ p.name }}</router-link>

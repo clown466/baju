@@ -73,19 +73,30 @@ def collect(url, kind, profile_dir, cookies_out, on_status, chrome_path=None):
         for i in range(500):
             if not state["has_more"] and state["batches"] > 0:
                 break
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            page.wait_for_timeout(1500)
-            if len(seen) == last:
-                stall += 1
-                if stall >= 20:
-                    break
+            if seen:
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                page.wait_for_timeout(1500)
+                if len(seen) == last:
+                    stall += 1
+                    if stall >= 20:
+                        break
+                else:
+                    stall, last = 0, len(seen)
             else:
-                stall, last = 0, len(seen)
-            # 30 秒仍无数据且出现登录墙 → 要求登录
-            if i == 20 and not seen:
-                if page.locator("#loginContainer, [data-e2e='login-modal']").count():
+                # 尚无数据：可能是滑块验证/登录墙。不滚动以免干扰用户操作，
+                # 定期刷新页面以在验证完成后重新触发数据请求
+                page.wait_for_timeout(1500)
+                if i == 5:
+                    on_status("如浏览器出现滑块验证或登录提示，请手动完成后等待…")
+                if i == 20 and page.locator(
+                        "#loginContainer, [data-e2e='login-modal']").count():
                     ctx.close()
                     raise NeedLoginError("需要登录")
+                if i > 0 and i % 30 == 0:
+                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                    page.wait_for_timeout(4000)
+                if i >= 150:  # 约 4 分钟仍无数据 → 放弃
+                    break
 
         # DOM 兜底补充
         for a in page.eval_on_selector_all(

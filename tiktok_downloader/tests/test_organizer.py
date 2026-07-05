@@ -1,5 +1,5 @@
 import pytest
-from organizer import clean_series, parse_input
+from organizer import clean_series, parse_input, VideoItem, plan_downloads
 
 
 def test_clean_series_strips_hashtags():
@@ -31,3 +31,23 @@ def test_parse_input_video_url():
 def test_parse_input_invalid_raises():
     with pytest.raises(ValueError):
         parse_input("https://example.com/foo")
+
+
+def test_plan_downloads_groups_and_numbers_by_time():
+    items = [
+        VideoItem("b", 200, "Show A #fyp"),
+        VideoItem("a", 100, "Show A"),
+        VideoItem("c", 300, "Show B"),
+    ]
+    plan = plan_downloads(items)
+    a = plan["Show A"]
+    assert [t.video_id for t in a] == ["a", "b"]
+    assert a[0].filename == "第01集.mp4"
+    assert a[1].filename == "第02集.mp4"
+    assert plan["Show B"][0].filename == "第01集.mp4"
+
+def test_plan_downloads_three_digits_for_100_plus():
+    items = [VideoItem(str(i), i, "Long") for i in range(100)]
+    plan = plan_downloads(items)
+    assert plan["Long"][0].filename == "第001集.mp4"
+    assert plan["Long"][99].filename == "第100集.mp4"

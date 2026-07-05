@@ -32,3 +32,25 @@ def parse_input(text: str) -> tuple[str, str]:
     if m:
         return ("user", f"https://www.tiktok.com/{m.group(1)}")
     raise ValueError(f"无法识别的链接: {text}")
+
+
+@dataclass
+class DownloadTask:
+    video_id: str
+    series: str
+    filename: str
+
+
+def plan_downloads(items: list[VideoItem]) -> dict[str, list[DownloadTask]]:
+    groups: dict[str, list[VideoItem]] = {}
+    for it in items:
+        groups.setdefault(clean_series(it.desc), []).append(it)
+    plan: dict[str, list[DownloadTask]] = {}
+    for series, eps in groups.items():
+        eps.sort(key=lambda v: v.create_time)
+        width = 3 if len(eps) >= 100 else 2
+        plan[series] = [
+            DownloadTask(v.id, series, f"第{i:0{width}d}集.mp4")
+            for i, v in enumerate(eps, 1)
+        ]
+    return plan

@@ -22,7 +22,7 @@ class App:
     def __init__(self, root: tk.Tk):
         self.root = root
         root.title("TikTok 剧集下载器")
-        root.geometry("640x560")
+        root.geometry("660x720")
         self.q = queue.Queue()
         self.plan = {}
         self.stop_event = threading.Event()
@@ -40,9 +40,24 @@ class App:
         ttk.Entry(top, textvariable=self.dir_var, width=52).grid(row=1, column=1, padx=4)
         ttk.Button(top, text="浏览...", command=self.on_browse).grid(row=1, column=2)
 
+        # 底部控件先 pack（side=bottom）：窗口不够高时优先压缩列表，而不是挤掉按钮
+        self.log = tk.Text(root, height=8, state="disabled")
+        self.log.pack(side="bottom", fill="x", padx=8, pady=(4, 8))
+        self.status = tk.StringVar(value="就绪")
+        ttk.Label(root, textvariable=self.status).pack(side="bottom", anchor="w", padx=8)
+        self.prog = ttk.Progressbar(root, maximum=100)
+        self.prog.pack(side="bottom", fill="x", padx=8)
+        btns = ttk.Frame(root, padding=8); btns.pack(side="bottom", fill="x")
+        ttk.Button(btns, text="全选", command=lambda: self.set_all(True)).pack(side="left")
+        ttk.Button(btns, text="全不选", command=lambda: self.set_all(False)).pack(side="left", padx=4)
+        self.btn_dl = ttk.Button(btns, text="开始下载", command=self.on_download, state="disabled")
+        self.btn_dl.pack(side="left", padx=12)
+        self.btn_stop = ttk.Button(btns, text="停止", command=self.on_stop, state="disabled")
+        self.btn_stop.pack(side="left")
+
         mid = ttk.Frame(root, padding=(8, 0)); mid.pack(fill="both", expand=True)
         ttk.Style().configure("Treeview", rowheight=68)  # 给封面缩略图留高度
-        self.tree = ttk.Treeview(mid, columns=("eps",), selectmode="none", height=8)
+        self.tree = ttk.Treeview(mid, columns=("eps",), selectmode="none", height=6)
         self.tree.heading("#0", text="剧名（点击勾选/取消）")
         self.tree.heading("eps", text="集数")
         self.tree.column("eps", width=60, anchor="center")
@@ -52,20 +67,6 @@ class App:
         self.tree.bind("<Button-1>", self.on_tree_click)
         self.checked: dict[str, bool] = {}
         self.cover_imgs: dict[str, ImageTk.PhotoImage] = {}  # 防止被 GC
-
-        btns = ttk.Frame(root, padding=8); btns.pack(fill="x")
-        ttk.Button(btns, text="全选", command=lambda: self.set_all(True)).pack(side="left")
-        ttk.Button(btns, text="全不选", command=lambda: self.set_all(False)).pack(side="left", padx=4)
-        self.btn_dl = ttk.Button(btns, text="开始下载", command=self.on_download, state="disabled")
-        self.btn_dl.pack(side="left", padx=12)
-        self.btn_stop = ttk.Button(btns, text="停止", command=self.on_stop, state="disabled")
-        self.btn_stop.pack(side="left")
-
-        self.prog = ttk.Progressbar(root, maximum=100); self.prog.pack(fill="x", padx=8)
-        self.status = tk.StringVar(value="就绪")
-        ttk.Label(root, textvariable=self.status).pack(anchor="w", padx=8)
-        self.log = tk.Text(root, height=8, state="disabled")
-        self.log.pack(fill="both", expand=False, padx=8, pady=(4, 8))
         root.after(100, self.poll)
 
     # ---------- 界面事件 ----------

@@ -78,36 +78,33 @@ cd "H:\claude项目\loohii" && npm install
 ```
 Expected: 无 error 退出（warning 可忽略）。
 
-- [ ] **Step 2: 从服务器取回环境变量文件**
+- [ ] **Step 2: 配置 vite 代理指向生产 API（本机虚拟化禁用，无法跑 Docker；阶段 0+1 全部改动为纯前端，无需本地数据库）**
+
+创建 `H:\claude项目\loohii\.env.local`（vite 专用，确认在 `.gitignore` 内，不入库）：
+
+```
+VITE_DEV_API_PROXY=https://loohii.com
+```
+`vite.config.ts` 已内置该变量的 proxy 逻辑（`/api` 与 `/socket.io` 转发 + `changeOrigin`），无需改代码。**注意：本地 dev 的读写会作用于生产数据，冒烟时只用自己的账号做只读浏览。**
+
+- [ ] **Step 3: 构建验证**
 
 ```bash
-pscp -batch -hostkey "SHA256:oMogBHYLu9S5widJ1D2MopEELwkNTb0EPS7OYnIzbJI" -pw "<密码>" root@157.254.234.105:/projects/loohii/.env "H:\claude项目\loohii\.env"
-grep -c "=" "H:\claude项目\loohii\.env"
+cd "H:\claude项目\loohii" && npm run build
 ```
-Expected: 文件非空。检查 `.gitignore` 包含 `.env`（`grep "^\.env" .gitignore`）；将其中 `DATABASE_URL`/`REDIS_URL` 的主机改为 `localhost`（本地 compose 端口 5432/6379）。**注意：不要改动服务器上的 .env。**
+Expected: vite build 成功，作为后续任务的编译基线。
 
-- [ ] **Step 3: 启动本地 postgres/redis**
+- [ ] **Step 4: （跳过）本地数据库初始化**
+
+本机无虚拟化，跳过 docker compose 与 prisma migrate。服务端改动的阶段（2/3/4）将直接以生产镜像构建+服务器验证的方式进行，届时在计划中单独安排。
+
+- [ ] **Step 5: 启动前端 dev 并冒烟**
 
 ```bash
-cd "H:\claude项目\loohii" && docker compose up -d postgres redis && docker compose ps
+cd "H:\claude项目\loohii" && npm run dev
 ```
-Expected: 两个容器 `healthy`。
-
-- [ ] **Step 4: 初始化数据库结构**
-
-```bash
-cd "H:\claude项目\loohii" && npx prisma generate && npx prisma migrate deploy
-```
-Expected: migrations 全部应用，无 error。
-
-- [ ] **Step 5: 启动前后端并冒烟**
-
-```bash
-cd "H:\claude项目\loohii" && npm run server:dev   # 终端 A
-cd "H:\claude项目\loohii" && npm run dev          # 终端 B
-```
-浏览器打开 `http://localhost:5173`：注册/登录一个本地账号 → 新建项目 → 打开画布页。
-Expected: 页面正常渲染，无控制台报错（画布空白属正常，本地无历史数据）。
+浏览器打开 `http://localhost:5173`：用现有账号登录（请求经代理达生产 API）→ 打开一个项目画布。
+Expected: 页面正常渲染、能加载真实项目数据，无控制台报错。
 
 - [ ] **Step 6: 基线记录（供 Task 3 对比）**
 
@@ -312,7 +309,7 @@ import { generationRecordsFingerprint } from '../features/canvas/generationRecor
 cd "H:\claude项目\loohii" && npm run build
 ```
 本地 dev：打开画布页，React DevTools Profiler 录 20 秒（期间不操作）。
-Expected: build 通过；Profiler 中 ProjectCanvasPage **零重渲染**（改动前每 5 秒一次）。停掉 `server:dev` 模拟断网 15 秒再恢复：记录列表不闪空。
+Expected: build 通过；Profiler 中 ProjectCanvasPage **零重渲染**（改动前每 5 秒一次）。DevTools Network 面板切 Offline 15 秒再恢复：记录列表不闪空。
 
 - [ ] **Step 7: Commit**
 

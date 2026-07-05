@@ -1,6 +1,8 @@
+import os
 import threading
+from unittest.mock import patch, MagicMock
 from organizer import DownloadTask
-from downloader import run_downloads
+from downloader import run_downloads, _run_ytdlp
 
 
 def make_plan():
@@ -76,3 +78,74 @@ def test_stop_event_mid_way_halts_subsequent(tmp_path):
 
     # 只有第一个任务的 runner 被调用，后续任务因 stop_event 被跳过
     assert calls == ["v1"], f"期望只调用 v1，实际调用了 {calls}"
+
+
+# ── 新增测试：覆盖三个修复点 ──────────────────────────────────────────────────
+
+def test_missing_cookies_file_runs_without_cookies(tmp_path):
+    """Finding 1: cookies 文件不存在时，_run_ytdlp 应不带 --cookies 调用 yt-dlp，而非静默返回 False。"""
+    fake_result = MagicMock()
+    fake_result.returncode = 0
+    fake_result.stderr = ""
+
+    captured_cmds = []
+
+    def fake_run(cmd, **kwargs):
+        captured_cmds.append(cmd)
+        return fake_result
+
+    out_path = str(tmp_path / "video.mp4")
+    with patch("downloader.subprocess.run", side_effect=fake_run):
+        ok, err = _run_ytdlp("vid123", out_path, "/nonexistent/cookies.txt")
+
+    assert ok is True
+    assert len(captured_cmds) == 1
+    # --cookies 不应出现在命令中
+    assert "--cookies" not in captured_cmds[0], "不存在的 cookies 文件不应导致 --cookies 参数被传入"
+
+
+def test_failed_txt_written_for_still_failed_items(tmp_path):
+    """Finding 2: 重试后仍失败的条目应写入 <base_dir>/failed.txt。"""
+    def always_fail(vid, out, ck):
+        return False  # 返回 bool，兼容旧注入接口
+
+    ok, fail = run_downloads(
+        {"S": [DownloadTask("v1", "S", "第01集.mp4"),
+               DownloadTask("v2", "S", "第02集.mp4")]},
+        {"S"}, str(tmp_path), "c.txt",
+        on_progress=lambda *a: None,
+        stop_event=threading.Event(),
+        runner=always_fail, max_workers=1)
+
+    assert fail == 2
+    failed_txt = tmp_path / "failed.txt"
+    assert failed_txt.exists(), "failed.txt 应被创建"
+    content = failed_txt.read_text(encoding="utf-8")
+    assert "v1" in content
+    assert "v2" in content
+    assert "S/第01集.mp4" in content
+    assert "S/第02集.mp4" in content
+
+
+def test_failure_message_includes_stderr_tail(tmp_path):
+    """Finding 3: 失败时 on_progress 收到的消息应包含 stderr 尾部信息。"""
+    stderr_output = "ERROR: some long error from yt-dlp about network timeout"
+
+    def failing_runner_with_stderr(vid, out, ck):
+        # 新接口：返回 (bool, stderr_tail)
+        return (False, stderr_output[-200:])
+
+    msgs = []
+    run_downloads(
+        {"S": [DownloadTask("v1", "S", "第01集.mp4")]}, {"S"},
+        str(tmp_path), "c.txt",
+        on_progress=lambda d, t, f, m: msgs.append(m),
+        stop_event=threading.Event(),
+        runner=failing_runner_with_stderr, max_workers=1)
+
+    # 找到包含 FAIL 的消息（初次或重试）
+    fail_msgs = [m for m in msgs if "FAIL" in m or "重试仍失败" in m]
+    assert fail_msgs, "应有失败消息"
+    # 至少有一条消息包含 stderr 尾部
+    assert any(stderr_output[-200:] in m for m in fail_msgs), \
+        f"失败消息应包含 stderr 尾部，实际消息: {fail_msgs}"

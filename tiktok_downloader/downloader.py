@@ -53,26 +53,35 @@ def run_downloads(plan, selected, base_dir, cookies_file, on_progress,
             return
         os.makedirs(os.path.dirname(out), exist_ok=True)
         ok = True if os.path.exists(out) else runner(t.video_id, out, cookies_file)
+        # 锁内只更新状态并取快照，锁外调用回调避免回调耗时串行化所有线程
         with lock:
             done += 1
             if not ok:
                 failed.append(item)
-            on_progress(done, total, len(failed),
-                        f"{'OK' if ok else 'FAIL'} {t.series}/{t.filename}")
+            snap_done = done
+            snap_failed = len(failed)
+        on_progress(snap_done, total, snap_failed,
+                    f"{'OK' if ok else 'FAIL'} {t.series}/{t.filename}")
 
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         list(ex.map(work, tasks))
 
     # 失败串行重试一轮
+    # remaining 从 len(failed) 单调递减到最终 still_failed，保证 UI 失败计数全局语义一致
+    remaining_failures = len(failed)
     still_failed = 0
     for t, out in failed:
         if stop_event.is_set():
             still_failed += 1
             continue
         if os.path.exists(out) or runner(t.video_id, out, cookies_file):
-            continue
-        still_failed += 1
-        on_progress(done, total, still_failed, f"重试仍失败 {t.series}/{t.filename}")
+            # 重试成功：全局失败数减 1
+            remaining_failures -= 1
+            on_progress(done, total, remaining_failures, f"重试成功 {t.series}/{t.filename}")
+        else:
+            still_failed += 1
+            # 重试仍失败：全局失败数保持（remaining_failures 不变）
+            on_progress(done, total, remaining_failures, f"重试仍失败 {t.series}/{t.filename}")
 
     if stop_event.is_set():
         return done - len(failed), still_failed

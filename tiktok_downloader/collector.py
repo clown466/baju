@@ -17,13 +17,14 @@ class ChromeNotFoundError(Exception):
 
 def _collect_single(url: str) -> list[VideoItem]:
     r = subprocess.run(
-        ["yt-dlp", "--no-download", "--print", "%(id)s\t%(timestamp)s\t%(title)s", url],
+        ["yt-dlp", "--no-download", "--print",
+         "%(id)s\t%(timestamp)s\t%(thumbnail)s\t%(title)s", url],
         capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
     if r.returncode != 0:
         raise RuntimeError(f"获取视频信息失败: {r.stderr[-200:]}")
-    vid, ts, title = r.stdout.strip().split("\t", 2)
+    vid, ts, thumb, title = r.stdout.strip().split("\t", 3)
     ts = int(ts) if ts.isdigit() else 0
-    return [VideoItem(vid, ts, title)]
+    return [VideoItem(vid, ts, title, "" if thumb == "NA" else thumb)]
 
 
 def collect(url, kind, profile_dir, cookies_out, on_status, chrome_path=None):
@@ -60,7 +61,8 @@ def collect(url, kind, profile_dir, cookies_out, on_status, chrome_path=None):
             for it in data.get("itemList") or []:
                 seen[it["id"]] = VideoItem(
                     it["id"], int(it.get("createTime") or 0),
-                    re.sub(r"[\t\n]", " ", it.get("desc") or ""))
+                    re.sub(r"[\t\n]", " ", it.get("desc") or ""),
+                    (it.get("video") or {}).get("cover") or "")
             state["has_more"] = bool(data.get("hasMore"))
             state["batches"] += 1
             on_status(f"已采集 {len(seen)} 个视频…")

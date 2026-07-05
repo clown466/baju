@@ -1,13 +1,17 @@
+import io
 import os
 import queue
 import threading
 import tkinter as tk
+import urllib.request
 from tkinter import filedialog, messagebox, ttk
+
+from PIL import Image, ImageTk
 
 import config
 from collector import ChromeNotFoundError, NeedLoginError, collect
 from downloader import run_downloads
-from organizer import parse_input, plan_downloads
+from organizer import parse_input, plan_downloads, series_covers
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 PROFILE_DIR = os.path.join(BASE, "chrome_profile")
@@ -37,7 +41,8 @@ class App:
         ttk.Button(top, text="浏览...", command=self.on_browse).grid(row=1, column=2)
 
         mid = ttk.Frame(root, padding=(8, 0)); mid.pack(fill="both", expand=True)
-        self.tree = ttk.Treeview(mid, columns=("eps",), selectmode="none", height=12)
+        ttk.Style().configure("Treeview", rowheight=68)  # 给封面缩略图留高度
+        self.tree = ttk.Treeview(mid, columns=("eps",), selectmode="none", height=8)
         self.tree.heading("#0", text="剧名（点击勾选/取消）")
         self.tree.heading("eps", text="集数")
         self.tree.column("eps", width=60, anchor="center")
@@ -46,6 +51,7 @@ class App:
         self.tree.config(yscrollcommand=sb.set)
         self.tree.bind("<Button-1>", self.on_tree_click)
         self.checked: dict[str, bool] = {}
+        self.cover_imgs: dict[str, ImageTk.PhotoImage] = {}  # 防止被 GC
 
         btns = ttk.Frame(root, padding=8); btns.pack(fill="x")
         ttk.Button(btns, text="全选", command=lambda: self.set_all(True)).pack(side="left")
@@ -142,6 +148,15 @@ class App:
         self.stop_event.set()
         self.status.set("正在停止…（等待在途任务完成）")
 
+    # ---------- 封面 ----------
+    def cover_worker(self, covers: dict[str, str]):
+        for series, url in covers.items():
+            try:
+                with urllib.request.urlopen(url, timeout=10) as resp:
+                    self.q.put(("cover", series, resp.read()))
+            except Exception:
+                pass  # 封面加载失败不影响功能
+
     # ---------- 队列轮询 ----------
     def poll(self):
         try:
@@ -160,6 +175,7 @@ class App:
             self.plan = plan_downloads(msg[1])
             self.tree.delete(*self.tree.get_children())
             self.checked.clear()
+            self.cover_imgs.clear()
             for series in sorted(self.plan, key=lambda s: -len(self.plan[s])):
                 self.tree.insert("", "end", iid=series, values=(len(self.plan[series]),))
                 self.checked[series] = True
@@ -168,6 +184,22 @@ class App:
             self.status.set(f"采集完成：{len(self.plan)} 部剧 / {total} 集")
             self.btn_collect.config(state="normal")
             self.btn_dl.config(state="normal")
+            covers = series_covers(msg[1])
+            if covers:
+                threading.Thread(target=self.cover_worker,
+                                 args=(covers,), daemon=True).start()
+        elif kind == "cover":
+            _, series, data = msg
+            if not self.tree.exists(series):
+                return  # 已重新采集，行不存在
+            try:
+                img = Image.open(io.BytesIO(data))
+                img.thumbnail((48, 64))
+                photo = ImageTk.PhotoImage(img)
+            except Exception:
+                return
+            self.cover_imgs[series] = photo
+            self.tree.item(series, image=photo)
         elif kind == "prog":
             _, d, t, f, m = msg
             self.prog.config(maximum=max(t, 1), value=d)

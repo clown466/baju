@@ -1,5 +1,14 @@
 import pytest
-from organizer import clean_series, parse_input, VideoItem, plan_downloads
+from organizer import clean_series, parse_input, series_covers, VideoItem, plan_downloads
+
+
+def test_series_covers_earliest_episode_wins():
+    items = [
+        VideoItem("2", 200, "Show A #fyp", "http://c/2.jpg"),
+        VideoItem("1", 100, "Show A #tag", "http://c/1.jpg"),
+        VideoItem("3", 300, "Show B", ""),  # 无封面 → 不出现
+    ]
+    assert series_covers(items) == {"Show A": "http://c/1.jpg"}
 
 
 def test_clean_series_strips_hashtags():

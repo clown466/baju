@@ -7,6 +7,7 @@ class VideoItem:
     id: str
     create_time: int
     desc: str
+    cover: str = ""
 
 
 def clean_series(desc: str) -> str:
@@ -39,6 +40,18 @@ class DownloadTask:
     video_id: str
     series: str
     filename: str
+
+
+def series_covers(items: list[VideoItem]) -> dict[str, str]:
+    """每部剧取最早一集的封面 URL（无封面的剧不出现在结果里）"""
+    best: dict[str, tuple[int, str]] = {}
+    for it in items:
+        if not it.cover:
+            continue
+        s = clean_series(it.desc)
+        if s not in best or it.create_time < best[s][0]:
+            best[s] = (it.create_time, it.cover)
+    return {s: cover for s, (_, cover) in best.items()}
 
 
 def plan_downloads(items: list[VideoItem]) -> dict[str, list[DownloadTask]]:

@@ -5,6 +5,7 @@ import time
 
 from cookies_io import write_netscape
 from organizer import VideoItem
+from runtime import NO_WINDOW, ytdlp_cmd
 
 
 class NeedLoginError(Exception):
@@ -17,9 +18,10 @@ class ChromeNotFoundError(Exception):
 
 def _collect_single(url: str) -> list[VideoItem]:
     r = subprocess.run(
-        ["yt-dlp", "--no-download", "--print",
+        [ytdlp_cmd(), "--no-download", "--print",
          "%(id)s\t%(timestamp)s\t%(thumbnail)s\t%(title)s", url],
-        capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
+        capture_output=True, text=True, timeout=120, encoding="utf-8",
+        errors="replace", creationflags=NO_WINDOW)
     if r.returncode != 0:
         raise RuntimeError(f"获取视频信息失败: {r.stderr[-200:]}")
     vid, ts, thumb, title = r.stdout.strip().split("\t", 3)

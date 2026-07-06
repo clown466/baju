@@ -6,12 +6,13 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from organizer import DownloadTask
+from runtime import NO_WINDOW, ytdlp_cmd
 
 
 def _run_ytdlp(video_id: str, out_path: str, cookies_file: str) -> tuple[bool, str]:
     """返回 (成功与否, 错误尾信息)；错误尾信息最多 200 字符。"""
     url = f"https://www.tiktok.com/@_/video/{video_id}"
-    cmd = ["yt-dlp", "-q", "--no-progress", "--retries", "5",
+    cmd = [ytdlp_cmd(), "-q", "--no-progress", "--retries", "5",
            "-o", out_path.replace(".mp4", ".%(ext)s"), url]
 
     # 若 cookies 文件存在则复制临时副本（避免并发回写竞态），否则不带 --cookies 运行
@@ -24,12 +25,13 @@ def _run_ytdlp(video_id: str, out_path: str, cookies_file: str) -> tuple[bool, s
         except OSError:
             ck = None
     if ck:
-        cmd = ["yt-dlp", "--cookies", ck, "-q", "--no-progress",
+        cmd = [ytdlp_cmd(), "--cookies", ck, "-q", "--no-progress",
                "--retries", "5",
                "-o", out_path.replace(".mp4", ".%(ext)s"), url]
 
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=300,
+                           creationflags=NO_WINDOW)
         if r.returncode == 0:
             return True, ""
         tail = r.stderr[-200:] if r.stderr else ""

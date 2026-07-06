@@ -9,11 +9,12 @@ from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
 
 import config
+import eula
 from collector import ChromeNotFoundError, NeedLoginError, collect
 from downloader import run_downloads
 from organizer import parse_input, plan_downloads, series_covers
+from runtime import BASE
 
-BASE = os.path.dirname(os.path.abspath(__file__))
 PROFILE_DIR = os.path.join(BASE, "chrome_profile")
 COOKIES = os.path.join(BASE, "cookies.txt")
 
@@ -21,7 +22,7 @@ COOKIES = os.path.join(BASE, "cookies.txt")
 class App:
     def __init__(self, root: tk.Tk):
         self.root = root
-        root.title("TikTok 剧集下载器")
+        root.title(eula.APP_NAME)
         root.geometry("660x720")
         self.q = queue.Queue()
         self.plan = {}
@@ -235,7 +236,20 @@ class App:
             messagebox.showerror("错误", msg[1])
 
 
-if __name__ == "__main__":
+def main():
     root = tk.Tk()
+    cfg = config.load()
+    if not eula.is_accepted(cfg):
+        root.withdraw()  # 先隐藏主窗口，只显示协议
+        if not eula.show_eula(root):
+            root.destroy()
+            return
+        cfg["eula_accepted_version"] = eula.EULA_VERSION
+        config.save(cfg)
+        root.deiconify()
     App(root)
     root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

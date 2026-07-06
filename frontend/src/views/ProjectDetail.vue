@@ -74,13 +74,15 @@ const tabs = [
         <span class="tab-label">{{ label }}</span>
       </button>
     </nav>
-    <Stage1Extract v-if="tab === 'stage1'" :pid="pid" :project="project" />
-    <ArtifactTab v-else-if="tab === 'stage2'" :pid="pid" kind="analysis"
-                 generate-label="生成拆解报告" />
-    <Stage3Settings v-else-if="tab === 'stage3'" :pid="pid" />
-    <ArtifactTab v-else-if="tab === 'stage4'" :pid="pid" kind="outline"
-                 generate-label="生成逐集大纲" />
-    <Stage5Scripts v-else :pid="pid" :project="project" />
+    <Transition name="fade" mode="out-in">
+      <Stage1Extract v-if="tab === 'stage1'" :pid="pid" :project="project" />
+      <ArtifactTab v-else-if="tab === 'stage2'" key="stage2" :pid="pid" kind="analysis"
+                   generate-label="生成拆解报告" />
+      <Stage3Settings v-else-if="tab === 'stage3'" :pid="pid" />
+      <ArtifactTab v-else-if="tab === 'stage4'" key="stage4" :pid="pid" kind="outline"
+                   generate-label="生成逐集大纲" />
+      <Stage5Scripts v-else :pid="pid" :project="project" />
+    </Transition>
   </div>
   <p v-else-if="error" class="error">{{ error }}</p>
   <Skeleton v-else :blocks="4" />

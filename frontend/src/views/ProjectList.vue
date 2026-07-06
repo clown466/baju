@@ -36,6 +36,8 @@ onMounted(load)
 </script>
 
 <template>
+  <!-- 单根：让 App.vue 路由 <Transition> 可以直接做淡入淡出 -->
+  <div>
   <h1>项目列表</h1>
   <Skeleton v-if="loading" :blocks="3" />
   <div class="project-grid">
@@ -62,6 +64,7 @@ onMounted(load)
       <button type="submit" class="primary">创建并扫描分集</button>
     </form>
     <p v-if="error" class="error">{{ error }}</p>
+  </div>
   </div>
 </template>
 

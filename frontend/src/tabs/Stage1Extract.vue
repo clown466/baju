@@ -102,6 +102,7 @@ async function saveScript(text) {
     <ProgressBar v-if="project.running" :done="doneCount" :total="project.episodes.length" />
     <p v-if="error" class="error">{{ error }}</p>
 
+    <div class="table-scroll">
     <table class="episodes">
       <thead>
         <tr><th>集</th><th>文件</th><th>状态</th><th>操作</th></tr>
@@ -129,6 +130,7 @@ async function saveScript(text) {
         </tr>
       </tbody>
     </table>
+    </div>
 
     <section v-if="viewing !== null">
       <h2>第 {{ viewing }} 集原剧剧本</h2>

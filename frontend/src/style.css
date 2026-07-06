@@ -28,6 +28,9 @@
   --border: #30363d;
   --border-subtle: #21262d;
 
+  /* 遮罩 */
+  --overlay-mask: rgba(0, 0, 0, 0.6);
+
   /* 字体 */
   --font-ui: system-ui, "Microsoft YaHei", sans-serif;
   --font-script: "Noto Serif SC", Georgia, "SFMono-Regular", Consolas, "Microsoft YaHei", serif;
@@ -170,13 +173,13 @@ button:disabled {
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #0d1117;
+  color: var(--bg-page);
   font-weight: 600;
 }
 button.primary:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  color: #0d1117;
+  color: var(--bg-page);
 }
 button.primary:active {
   background: var(--accent-active);
@@ -185,7 +188,7 @@ button.primary:active {
 button.primary:disabled {
   background: var(--accent);
   border-color: var(--accent);
-  color: #0d1117;
+  color: var(--bg-page);
 }
 
 button.danger {
@@ -416,6 +419,7 @@ table.episodes tbody tr:last-child td {
   font-size: var(--fs-sm);
   line-height: 1.5;
   background: var(--bg-raised);
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
 .badge.done {
   color: var(--success);
@@ -627,7 +631,7 @@ button.loading::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--overlay-mask);
 }
 .confirm-card {
   min-width: 280px;
@@ -650,8 +654,8 @@ button.loading::before {
 
 /* ---------- 深色滚动条 ---------- */
 
-* {
-  scrollbar-color: #30363d var(--bg-page);
+html {
+  scrollbar-color: var(--border) var(--bg-page);
 }
 ::-webkit-scrollbar {
   width: 10px;
@@ -661,10 +665,55 @@ button.loading::before {
   background: var(--bg-page);
 }
 ::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: var(--border);
   border-radius: 5px;
   border: 2px solid var(--bg-page);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #484f58;
+  background: var(--text-disabled);
+}
+
+/* ---------- 过渡动画（页签 / 路由切换 150ms 淡入淡出） ---------- */
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* ---------- 表格横向滚动容器 ---------- */
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+/* ---------- 响应式（≤768px） ---------- */
+
+@media (max-width: 768px) {
+  .project-grid {
+    grid-template-columns: 1fr;
+  }
+  .topbar {
+    padding: var(--sp-2) var(--sp-3);
+  }
+  main {
+    padding: var(--sp-2) var(--sp-3) var(--sp-6);
+  }
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+/* ---------- 减动效偏好 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

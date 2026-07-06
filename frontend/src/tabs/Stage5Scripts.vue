@@ -90,6 +90,7 @@ async function saveScript(text) {
     <p v-if="project.running" class="muted">批量生成中（为保证前后集衔接按集串行）…</p>
     <p v-if="error" class="error">{{ error }}</p>
 
+    <div class="table-scroll">
     <table class="episodes">
       <thead>
         <tr><th>集</th><th>状态</th><th>操作</th></tr>
@@ -112,6 +113,7 @@ async function saveScript(text) {
         </tr>
       </tbody>
     </table>
+    </div>
 
     <section v-if="viewing !== null">
       <h2>新剧第 {{ viewing }} 集</h2>

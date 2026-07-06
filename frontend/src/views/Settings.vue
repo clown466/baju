@@ -73,6 +73,8 @@ onMounted(load)
 </script>
 
 <template>
+  <!-- 单根：让 App.vue 路由 <Transition> 可以直接做淡入淡出 -->
+  <div>
   <p><router-link to="/">← 返回项目列表</router-link></p>
   <h1>模型设置</h1>
 
@@ -82,7 +84,8 @@ onMounted(load)
       <label>API 密钥
         <span class="key-field">
           <input v-model="gemini.api_key" :type="showKey.gemini ? 'text' : 'password'" />
-          <button type="button" class="eye" :title="showKey.gemini ? '隐藏密钥' : '显示密钥'"
+          <button type="button" class="eye" aria-label="显示/隐藏密钥"
+                  :title="showKey.gemini ? '隐藏密钥' : '显示密钥'"
                   @click="toggleKey('gemini')">👁</button>
         </span>
       </label>
@@ -116,7 +119,8 @@ onMounted(load)
         <label>API 密钥
           <span class="key-field">
             <input v-model="p.api_key" :type="showKey[name] ? 'text' : 'password'" />
-            <button type="button" class="eye" :title="showKey[name] ? '隐藏密钥' : '显示密钥'"
+            <button type="button" class="eye" aria-label="显示/隐藏密钥"
+                    :title="showKey[name] ? '隐藏密钥' : '显示密钥'"
                     @click="toggleKey(name)">👁</button>
           </span>
         </label>
@@ -136,6 +140,7 @@ onMounted(load)
   </template>
   <p v-else-if="!error" class="muted">加载中…</p>
   <p v-if="error" class="error">{{ error }}</p>
+  </div>
 </template>
 
 <style scoped>

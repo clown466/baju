@@ -6,6 +6,7 @@ import { inject, ref } from 'vue'
 import * as api from '../api'
 import EditorPane from '../components/EditorPane.vue'
 import ProgressBar from '../components/ProgressBar.vue'
+import { useConfirm } from '../composables/useConfirm'
 import { useToast } from '../composables/useToast'
 
 const props = defineProps({
@@ -14,6 +15,7 @@ const props = defineProps({
 })
 const refresh = inject('refresh')
 const toast = useToast()
+const { confirm } = useConfirm()
 
 const extra = ref('')
 const error = ref('')
@@ -22,6 +24,7 @@ const script = ref('')
 const busyEp = ref(null)
 
 async function startBatch() {
+  if (!(await confirm('将批量生成全部剧集，已存在的新剧本会被覆盖，确定？'))) return
   error.value = ''
   try {
     await api.stage5Start(props.pid, null, extra.value)
@@ -42,6 +45,7 @@ async function cancel() {
 }
 
 async function genOne(ep) {
+  if (!(await confirm(`将生成/覆盖第 ${ep} 集新剧本，确定？`))) return
   error.value = ''
   busyEp.value = ep
   try {

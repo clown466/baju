@@ -1,4 +1,5 @@
 <script setup>
+import ConfirmDialog from './components/ConfirmDialog.vue'
 import Toast from './components/Toast.vue'
 </script>
 
@@ -9,4 +10,5 @@ import Toast from './components/Toast.vue'
   </header>
   <main><router-view /></main>
   <Toast />
+  <ConfirmDialog />
 </template>

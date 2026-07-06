@@ -1,9 +1,11 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import * as api from '../api'
+import { useConfirm } from '../composables/useConfirm'
 import { useToast } from '../composables/useToast'
 
 const toast = useToast()
+const { confirm } = useConfirm()
 
 const gemini = ref(null)
 const textLlm = ref(null)
@@ -38,11 +40,12 @@ function addProvider() {
   newProvider.value = ''
 }
 
-function removeProvider(name) {
+async function removeProvider(name) {
   if (name === textLlm.value.provider) {
     error.value = '不能删除当前使用中的服务商'
     return
   }
+  if (!(await confirm(`确定删除服务商 ${name}？`))) return
   delete textLlm.value.providers[name]
 }
 

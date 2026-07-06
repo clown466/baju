@@ -5,12 +5,14 @@ export default { name: 'Stage1Extract' }
 import { computed, inject, ref } from 'vue'
 import * as api from '../api'
 import EditorPane from '../components/EditorPane.vue'
+import { useToast } from '../composables/useToast'
 
 const props = defineProps({
   pid: { type: String, required: true },
   project: { type: Object, required: true },
 })
 const refresh = inject('refresh')
+const toast = useToast()
 
 const error = ref('')
 const viewing = ref(null)
@@ -81,6 +83,7 @@ async function saveScript(text) {
   try {
     await api.putEpisodeScript(props.pid, viewing.value, text)
     script.value = text
+    toast.success('已保存')
   } catch (e) {
     error.value = e.message
   }

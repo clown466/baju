@@ -1,6 +1,9 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import * as api from '../api'
+import { useToast } from '../composables/useToast'
+
+const toast = useToast()
 
 const gemini = ref(null)
 const textLlm = ref(null)
@@ -55,6 +58,7 @@ async function save() {
     gemini.value = s.gemini
     textLlm.value = s.text_llm
     saved.value = true
+    toast.success('设置已保存并立即生效')
   } catch (e) {
     error.value = e.message
   } finally {

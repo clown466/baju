@@ -81,6 +81,20 @@ test('单集生成并展示结果', async () => {
   expect(wrapper.text()).toContain('1-1 夜 内 修炼室')
 })
 
+test('单集生成中按钮带 loading spinner', async () => {
+  api.exportUrl.mockReturnValue('#')
+  let resolve
+  api.stage5Generate.mockReturnValue(new Promise((r) => { resolve = r }))
+  const wrapper = mount(Stage5Scripts, opts(makeProject()))
+  await wrapper.findAll('button').filter((b) => b.text() === '生成/重生成')[0].trigger('click')
+  await answerConfirm(true)
+  const busyBtn = wrapper.findAll('button').find((b) => b.text().includes('生成中'))
+  expect(busyBtn.classes()).toContain('loading')
+  resolve({ content: 'x' })
+  await flushPromises()
+  expect(wrapper.find('button.loading').exists()).toBe(false)
+})
+
 test('查看并保存已有新剧本', async () => {
   api.exportUrl.mockReturnValue('#')
   api.getNewScript.mockResolvedValue({ content: '旧内容' })

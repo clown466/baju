@@ -65,6 +65,22 @@ test('ArtifactTab 生成失败展示错误', async () => {
   expect(wrapper.find('.error').text()).toContain('还没有已完成的扒剧剧本')
 })
 
+test('ArtifactTab 生成中按钮带 loading spinner，结束后移除', async () => {
+  api.getArtifact.mockRejectedValue(new Error('尚未生成'))
+  let resolve
+  api.stage2Generate.mockReturnValue(new Promise((r) => { resolve = r }))
+  const wrapper = mount(ArtifactTab, {
+    props: { pid: 'deadbeef', kind: 'analysis', generateLabel: '生成拆解报告' },
+  })
+  await flushPromises()
+  await button(wrapper, '生成拆解报告').trigger('click')
+  const busyBtn = wrapper.findAll('button').find((b) => b.text().includes('生成中'))
+  expect(busyBtn.classes()).toContain('loading')
+  resolve({ content: '# 报告' })
+  await flushPromises()
+  expect(wrapper.find('button.loading').exists()).toBe(false)
+})
+
 test('Stage3 AI 建议题材仅展示', async () => {
   api.getArtifact.mockRejectedValue(new Error('尚未生成'))
   api.stage3Suggest.mockResolvedValue({ content: '1. 都市修仙\n2. 民国悬疑' })

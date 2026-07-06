@@ -74,6 +74,20 @@ describe('Settings', () => {
     expect(select.findAll('option').map((o) => o.element.value)).toContain('deepseek')
   })
 
+  it('保存进行中按钮带 loading spinner', async () => {
+    api.getSettings.mockResolvedValue(clone(SETTINGS))
+    let resolve
+    api.putSettings.mockReturnValue(new Promise((r) => { resolve = r }))
+    const wrapper = mount(Settings, { global: { stubs: ['router-link'] } })
+    await flushPromises()
+    const saveBtn = wrapper.findAll('button').find((b) => b.text() === '保存设置')
+    await saveBtn.trigger('click')
+    expect(saveBtn.classes()).toContain('loading')
+    resolve(clone(SETTINGS))
+    await flushPromises()
+    expect(saveBtn.classes()).not.toContain('loading')
+  })
+
   it('删除服务商需二次确认，确认后移除', async () => {
     const s = clone(SETTINGS)
     s.text_llm.providers.deepseek = { base_url: 'https://d/v1', api_key: 'sk-2', model: 'm2' }

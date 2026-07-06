@@ -56,7 +56,7 @@ onMounted(load)
 
 <template>
   <div>
-    <button :disabled="busy" @click="generate">{{ busy ? '生成中…' : generateLabel }}</button>
+    <button :disabled="busy" :class="{ loading: busy }" @click="generate">{{ busy ? '生成中…' : generateLabel }}</button>
     <p v-if="error" class="error">{{ error }}</p>
     <EditorPane v-if="content" :content="content" @save="save" />
     <div v-else class="empty-state">

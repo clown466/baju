@@ -1,6 +1,9 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { useConfirm } from '../composables/useConfirm'
 import MarkdownView from './MarkdownView.vue'
+
+const { confirm } = useConfirm()
 
 const props = defineProps({
   content: { type: String, default: '' },
@@ -22,6 +25,12 @@ function save() {
   emit('save', draft.value)
   editing.value = false
 }
+async function cancelEdit() {
+  if (draft.value !== props.content) {
+    if (!(await confirm('有未保存修改，确定放弃？'))) return
+  }
+  editing.value = false
+}
 </script>
 
 <template>
@@ -30,7 +39,7 @@ function save() {
       <button v-if="!editing" @click="startEdit">编辑</button>
       <template v-else>
         <button @click="save">保存</button>
-        <button @click="editing = false">取消编辑</button>
+        <button @click="cancelEdit">取消编辑</button>
       </template>
     </div>
     <textarea v-if="editing" v-model="draft" rows="24"></textarea>

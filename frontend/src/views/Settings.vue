@@ -130,7 +130,7 @@ onMounted(load)
     </p>
 
     <p>
-      <button type="button" class="primary" :disabled="busy" @click="save">保存设置</button>
+      <button type="button" class="primary" :class="{ loading: busy }" :disabled="busy" @click="save">保存设置</button>
       <span v-if="saved" class="muted">　已保存并立即生效</span>
     </p>
   </template>

@@ -103,7 +103,8 @@ async function saveScript(text) {
             <span v-else class="muted">—</span>
           </td>
           <td>
-            <button :disabled="busyEp !== null || project.running" @click="genOne(e.episode)">
+            <button :disabled="busyEp !== null || project.running"
+                    :class="{ loading: busyEp === e.episode }" @click="genOne(e.episode)">
               {{ busyEp === e.episode ? '生成中…' : '生成/重生成' }}
             </button>
             <button @click="view(e.episode)">查看</button>

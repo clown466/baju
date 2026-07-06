@@ -105,7 +105,7 @@ onMounted(load)
     </p>
 
     <p>
-      <button type="button" :disabled="busy" @click="save">保存设置</button>
+      <button type="button" class="primary" :disabled="busy" @click="save">保存设置</button>
       <span v-if="saved" class="muted">　已保存并立即生效</span>
     </p>
   </template>
@@ -116,7 +116,14 @@ onMounted(load)
 <style scoped>
 .form-grid { display: grid; gap: 8px; max-width: 640px; }
 .form-grid label { display: flex; flex-direction: column; gap: 2px; }
-.provider-card { border: 1px solid #ddd; border-radius: 6px; padding: 8px 12px; margin: 8px 0; max-width: 640px; }
+.provider-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  padding: 8px 12px;
+  margin: 8px 0;
+  max-width: 640px;
+}
 .provider-card h3 { display: flex; justify-content: space-between; align-items: center; margin: 4px 0; }
-button.danger { background: #c0392b; }
 </style>

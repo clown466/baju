@@ -6,8 +6,10 @@ import { onMounted, ref } from 'vue'
 import * as api from '../api'
 import EditorPane from '../components/EditorPane.vue'
 import MarkdownView from '../components/MarkdownView.vue'
+import { useToast } from '../composables/useToast'
 
 const props = defineProps({ pid: { type: String, required: true } })
+const toast = useToast()
 
 const suggestions = ref('')
 const draft = ref('')
@@ -51,6 +53,7 @@ async function save(text) {
   try {
     await api.putArtifact(props.pid, 'settings', text)
     settings.value = text
+    toast.success('已保存')
   } catch (e) {
     error.value = e.message
   }

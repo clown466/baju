@@ -5,12 +5,15 @@ export default { name: 'Stage1Extract' }
 import { computed, inject, ref } from 'vue'
 import * as api from '../api'
 import EditorPane from '../components/EditorPane.vue'
+import ProgressBar from '../components/ProgressBar.vue'
+import { useToast } from '../composables/useToast'
 
 const props = defineProps({
   pid: { type: String, required: true },
   project: { type: Object, required: true },
 })
 const refresh = inject('refresh')
+const toast = useToast()
 
 const error = ref('')
 const viewing = ref(null)
@@ -20,6 +23,17 @@ const mappingDraft = ref([])
 
 const doneCount = computed(
   () => props.project.episodes.filter((e) => e.status === 'done').length)
+
+/* 状态 → 徽章变体/图标（uploading/analyzing 视为进行中） */
+function badgeKind(status) {
+  if (status === 'done' || status === 'failed' || status === 'pending') return status
+  return 'running'
+}
+function badgeIcon(status) {
+  if (status === 'done') return '✓ '
+  if (status === 'failed') return '✕ '
+  return ''
+}
 
 async function call(fn) {
   error.value = ''
@@ -70,6 +84,7 @@ async function saveScript(text) {
   try {
     await api.putEpisodeScript(props.pid, viewing.value, text)
     script.value = text
+    toast.success('已保存')
   } catch (e) {
     error.value = e.message
   }
@@ -84,8 +99,10 @@ async function saveScript(text) {
     <button v-if="!editingMapping" @click="startEditMapping">调整集数对应</button>
     <button v-else @click="saveMapping">保存集数对应</button>
     <a :href="api.exportUrl(pid, 'original')" target="_blank">导出原剧汇总</a>
+    <ProgressBar v-if="project.running" :done="doneCount" :total="project.episodes.length" />
     <p v-if="error" class="error">{{ error }}</p>
 
+    <div class="table-scroll">
     <table class="episodes">
       <thead>
         <tr><th>集</th><th>文件</th><th>状态</th><th>操作</th></tr>
@@ -103,7 +120,7 @@ async function saveScript(text) {
           <td>{{ e.episode }}</td>
           <td>{{ e.file }}</td>
           <td>
-            <span :class="`status-${e.status}`">{{ e.status }}</span>
+            <span :class="['badge', badgeKind(e.status), `status-${e.status}`]">{{ badgeIcon(e.status) }}{{ e.status }}</span>
             <span v-if="e.error" class="error">　{{ e.error }}</span>
           </td>
           <td>
@@ -113,6 +130,7 @@ async function saveScript(text) {
         </tr>
       </tbody>
     </table>
+    </div>
 
     <section v-if="viewing !== null">
       <h2>第 {{ viewing }} 集原剧剧本</h2>

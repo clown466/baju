@@ -5,12 +5,17 @@ export default { name: 'Stage5Scripts' }
 import { inject, ref } from 'vue'
 import * as api from '../api'
 import EditorPane from '../components/EditorPane.vue'
+import ProgressBar from '../components/ProgressBar.vue'
+import { useConfirm } from '../composables/useConfirm'
+import { useToast } from '../composables/useToast'
 
 const props = defineProps({
   pid: { type: String, required: true },
   project: { type: Object, required: true },
 })
 const refresh = inject('refresh')
+const toast = useToast()
+const { confirm } = useConfirm()
 
 const extra = ref('')
 const error = ref('')
@@ -19,6 +24,7 @@ const script = ref('')
 const busyEp = ref(null)
 
 async function startBatch() {
+  if (!(await confirm('将批量生成全部剧集，已存在的新剧本会被覆盖，确定？'))) return
   error.value = ''
   try {
     await api.stage5Start(props.pid, null, extra.value)
@@ -39,6 +45,7 @@ async function cancel() {
 }
 
 async function genOne(ep) {
+  if (!(await confirm(`将生成/覆盖第 ${ep} 集新剧本，确定？`))) return
   error.value = ''
   busyEp.value = ep
   try {
@@ -65,6 +72,7 @@ async function saveScript(text) {
   try {
     await api.putNewScript(props.pid, viewing.value, text)
     script.value = text
+    toast.success('已保存')
   } catch (e) {
     error.value = e.message
   }
@@ -78,18 +86,26 @@ async function saveScript(text) {
     <button :disabled="project.running" @click="startBatch">批量生成全部</button>
     <button v-if="project.running" @click="cancel">取消</button>
     <a :href="api.exportUrl(pid, 'new')" target="_blank">导出新剧汇总</a>
+    <ProgressBar v-if="project.running" indeterminate />
     <p v-if="project.running" class="muted">批量生成中（为保证前后集衔接按集串行）…</p>
     <p v-if="error" class="error">{{ error }}</p>
 
+    <div class="table-scroll">
     <table class="episodes">
       <thead>
-        <tr><th>集</th><th>操作</th></tr>
+        <tr><th>集</th><th>状态</th><th>操作</th></tr>
       </thead>
       <tbody>
         <tr v-for="e in project.episodes" :key="e.episode">
           <td>第 {{ e.episode }} 集</td>
           <td>
-            <button :disabled="busyEp !== null || project.running" @click="genOne(e.episode)">
+            <span v-if="busyEp === e.episode" class="badge running status-running">running</span>
+            <span v-else-if="project.running" class="badge pending status-pending">queued</span>
+            <span v-else class="muted">—</span>
+          </td>
+          <td>
+            <button :disabled="busyEp !== null || project.running"
+                    :class="{ loading: busyEp === e.episode }" @click="genOne(e.episode)">
               {{ busyEp === e.episode ? '生成中…' : '生成/重生成' }}
             </button>
             <button @click="view(e.episode)">查看</button>
@@ -97,6 +113,7 @@ async function saveScript(text) {
         </tr>
       </tbody>
     </table>
+    </div>
 
     <section v-if="viewing !== null">
       <h2>新剧第 {{ viewing }} 集</h2>

@@ -141,7 +141,7 @@ hr {
 
 button {
   margin: 2px var(--sp-1) 2px 0;
-  padding: var(--sp-1) 12px;
+  padding: var(--sp-1) calc(var(--sp-1) + var(--sp-2));
   font-family: var(--font-ui);
   font-size: var(--fs-base);
   line-height: 1.5;
@@ -210,7 +210,7 @@ textarea,
 select {
   width: 100%;
   box-sizing: border-box;
-  padding: 6px var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
   margin: var(--sp-1) 0;
   background: var(--bg-card);
   color: var(--text-primary);
@@ -246,20 +246,27 @@ textarea {
 
 table.episodes {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 12px;
+  /* separate + spacing 0：让外框圆角真正生效（collapse 会吃掉圆角） */
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: var(--sp-3);
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 table.episodes th,
 table.episodes td {
   border: none;
   border-bottom: 1px solid var(--border-subtle);
-  padding: 6px var(--sp-2);
+  padding: var(--sp-2);
   text-align: left;
 }
+table.episodes thead th:first-child { border-top-left-radius: var(--radius); }
+table.episodes thead th:last-child { border-top-right-radius: var(--radius); }
+table.episodes tbody tr:last-child td:first-child { border-bottom-left-radius: var(--radius); }
+table.episodes tbody tr:last-child td:last-child { border-bottom-right-radius: var(--radius); }
 table.episodes th {
   background: var(--bg-raised);
   color: var(--text-secondary);
@@ -279,7 +286,7 @@ table.episodes tbody tr:last-child td {
 .tabs {
   display: flex;
   gap: var(--sp-1);
-  margin: 12px 0;
+  margin: var(--sp-3) 0;
   padding: var(--sp-1);
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -312,6 +319,132 @@ table.episodes tbody tr:last-child td {
   height: 2px;
   border-radius: 1px;
   background: var(--accent);
+}
+
+/* 步骤条式页签：序号圆圈 + 完成态 ✓ */
+.tabs .step-num {
+  display: inline-block;
+  margin-right: var(--sp-1);
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+.tabs button.active .step-num {
+  color: var(--accent);
+}
+.tabs .step-num.done {
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* ---------- 通用卡片 ---------- */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: var(--sp-3);
+}
+
+/* ---------- 项目卡片网格 ---------- */
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--sp-3);
+  margin: var(--sp-3) 0;
+}
+.project-card {
+  display: block;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  color: var(--text-primary);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.project-card:hover {
+  color: var(--text-primary);
+  text-decoration: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-2px);
+}
+.project-card .cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96px;
+  font-size: 32px;
+  background: linear-gradient(135deg, var(--bg-raised), var(--bg-page));
+  border-bottom: 1px solid var(--border-subtle);
+}
+.project-card .project-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+}
+.project-card .project-name {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-card .ep-badge {
+  flex: none;
+  padding: 2px var(--sp-2);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
+/* ---------- 状态徽章 ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px var(--sp-2);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  background: var(--bg-raised);
+}
+.badge.done {
+  color: var(--success);
+  border-color: var(--success);
+}
+.badge.failed {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.badge.running {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+.badge.pending {
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+.badge.running::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: badge-spin 0.8s linear infinite;
+}
+@keyframes badge-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ---------- 语义 class ---------- */

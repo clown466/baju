@@ -17,8 +17,12 @@ test('加载项目并渲染五个页签', async () => {
   const wrapper = shallowMount(ProjectDetail, { props: { pid: 'deadbeef' } })
   await flushPromises()
   expect(wrapper.text()).toContain('霸总剧')
-  expect(wrapper.findAll('.tabs button').map((b) => b.text())).toEqual([
-    '① 扒剧', '② 拆解报告', '③ 新剧设定', '④ 大纲', '⑤ 新剧剧本',
+  expect(wrapper.findAll('.tabs button .tab-label').map((b) => b.text())).toEqual([
+    '扒剧', '拆解报告', '新剧设定', '大纲', '新剧剧本',
+  ])
+  // 无产物时序号圆圈显示 ①-⑤（未完成，不显示 ✓）
+  expect(wrapper.findAll('.tabs button .step-num').map((s) => s.text())).toEqual([
+    '①', '②', '③', '④', '⑤',
   ])
 })
 

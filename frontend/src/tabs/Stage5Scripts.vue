@@ -83,11 +83,16 @@ async function saveScript(text) {
 
     <table class="episodes">
       <thead>
-        <tr><th>集</th><th>操作</th></tr>
+        <tr><th>集</th><th>状态</th><th>操作</th></tr>
       </thead>
       <tbody>
         <tr v-for="e in project.episodes" :key="e.episode">
           <td>第 {{ e.episode }} 集</td>
+          <td>
+            <span v-if="busyEp === e.episode" class="badge running status-running">running</span>
+            <span v-else-if="project.running" class="badge pending status-pending">queued</span>
+            <span v-else class="muted">—</span>
+          </td>
           <td>
             <button :disabled="busyEp !== null || project.running" @click="genOne(e.episode)">
               {{ busyEp === e.episode ? '生成中…' : '生成/重生成' }}

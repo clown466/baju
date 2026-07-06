@@ -21,6 +21,17 @@ const mappingDraft = ref([])
 const doneCount = computed(
   () => props.project.episodes.filter((e) => e.status === 'done').length)
 
+/* 状态 → 徽章变体/图标（uploading/analyzing 视为进行中） */
+function badgeKind(status) {
+  if (status === 'done' || status === 'failed' || status === 'pending') return status
+  return 'running'
+}
+function badgeIcon(status) {
+  if (status === 'done') return '✓ '
+  if (status === 'failed') return '✕ '
+  return ''
+}
+
 async function call(fn) {
   error.value = ''
   try {
@@ -103,7 +114,7 @@ async function saveScript(text) {
           <td>{{ e.episode }}</td>
           <td>{{ e.file }}</td>
           <td>
-            <span :class="`status-${e.status}`">{{ e.status }}</span>
+            <span :class="['badge', badgeKind(e.status), `status-${e.status}`]">{{ badgeIcon(e.status) }}{{ e.status }}</span>
             <span v-if="e.error" class="error">　{{ e.error }}</span>
           </td>
           <td>

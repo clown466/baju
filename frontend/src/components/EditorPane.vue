@@ -38,3 +38,32 @@ function save() {
     <pre v-else class="plain">{{ content }}</pre>
   </div>
 </template>
+
+<style scoped>
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg-raised);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: var(--sp-2);
+}
+.editor-pane textarea,
+.editor-pane pre.plain {
+  font-family: var(--font-mono);
+  line-height: 1.7;
+  background: var(--bg-card);
+  padding: var(--sp-3);
+  border-radius: var(--radius);
+  box-sizing: border-box;
+}
+.editor-pane pre.plain {
+  border: 1px solid var(--border);
+  margin: var(--sp-1) 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+</style>

@@ -51,9 +51,13 @@ def show_eula(root: tk.Tk) -> bool:
     win = tk.Toplevel(root)
     win.title(f"{APP_NAME} - 用户协议与免责声明")
     win.geometry("620x520")
-    win.transient(root)
+    # 注意：主窗口处于 withdraw 状态时不能用 transient(root)，否则本窗口也不显示
     win.grab_set()
     win.protocol("WM_DELETE_WINDOW", win.destroy)  # 关窗=不同意
+    win.lift()
+    win.focus_force()
+    win.attributes("-topmost", True)
+    win.after(600, lambda: win.attributes("-topmost", False))
 
     text = tk.Text(win, wrap="word", padx=10, pady=8)
     sb = ttk.Scrollbar(win, command=text.yview)

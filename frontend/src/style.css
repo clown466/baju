@@ -544,6 +544,61 @@ table.episodes tbody tr:last-child td {
   to { opacity: 1; transform: translateX(0); }
 }
 
+/* ---------- 骨架屏 ---------- */
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0;
+}
+.skeleton-block {
+  height: 20px;
+  border-radius: var(--radius);
+  background: linear-gradient(
+    90deg,
+    var(--bg-card) 25%,
+    var(--bg-raised) 50%,
+    var(--bg-card) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-block:nth-child(1) { width: 40%; height: 28px; }
+.skeleton-block:nth-child(3) { width: 80%; }
+@keyframes skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* ---------- 空状态 ---------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-5) var(--sp-3);
+  margin: var(--sp-3) 0;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  text-align: center;
+}
+.empty-state .empty-icon {
+  font-size: 40px;
+  line-height: 1.2;
+  filter: grayscale(0.4);
+}
+.empty-state .empty-title {
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  margin: 0;
+}
+.empty-state p { margin: 0; }
+
 /* ---------- 二次确认对话框 ---------- */
 
 .confirm-mask {

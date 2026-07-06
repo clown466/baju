@@ -1,11 +1,13 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import * as api from '../api'
+import Skeleton from '../components/Skeleton.vue'
 
 const projects = ref([])
 const name = ref('')
 const videoDir = ref('')
 const error = ref('')
+const loading = ref(true)
 
 async function load() {
   try {
@@ -13,6 +15,8 @@ async function load() {
     error.value = ''
   } catch (e) {
     error.value = e.message
+  } finally {
+    loading.value = false
   }
 }
 
@@ -33,6 +37,7 @@ onMounted(load)
 
 <template>
   <h1>项目列表</h1>
+  <Skeleton v-if="loading" :blocks="3" />
   <div class="project-grid">
     <router-link v-for="p in projects" :key="p.id"
                  :to="`/projects/${p.id}`" class="project-card">
@@ -43,7 +48,11 @@ onMounted(load)
       </div>
     </router-link>
   </div>
-  <p v-if="!projects.length" class="muted">暂无项目</p>
+  <div v-if="!loading && !projects.length" class="empty-state">
+    <div class="empty-icon">🎬</div>
+    <p class="empty-title">还没有项目</p>
+    <p class="muted">暂无项目，在下方表单填写视频文件夹，创建第一个项目吧</p>
+  </div>
 
   <div class="card new-project-card">
     <h2>新建项目</h2>

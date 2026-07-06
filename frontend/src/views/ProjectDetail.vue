@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, provide, ref } from 'vue'
 import * as api from '../api'
 import { subscribeEvents } from '../sse'
+import Skeleton from '../components/Skeleton.vue'
 import ArtifactTab from '../tabs/ArtifactTab.vue'
 import Stage1Extract from '../tabs/Stage1Extract.vue'
 import Stage3Settings from '../tabs/Stage3Settings.vue'
@@ -82,5 +83,5 @@ const tabs = [
     <Stage5Scripts v-else :pid="pid" :project="project" />
   </div>
   <p v-else-if="error" class="error">{{ error }}</p>
-  <p v-else class="muted">加载中…</p>
+  <Skeleton v-else :blocks="4" />
 </template>

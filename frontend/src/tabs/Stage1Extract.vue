@@ -5,6 +5,7 @@ export default { name: 'Stage1Extract' }
 import { computed, inject, ref } from 'vue'
 import * as api from '../api'
 import EditorPane from '../components/EditorPane.vue'
+import ProgressBar from '../components/ProgressBar.vue'
 import { useToast } from '../composables/useToast'
 
 const props = defineProps({
@@ -98,6 +99,7 @@ async function saveScript(text) {
     <button v-if="!editingMapping" @click="startEditMapping">调整集数对应</button>
     <button v-else @click="saveMapping">保存集数对应</button>
     <a :href="api.exportUrl(pid, 'original')" target="_blank">导出原剧汇总</a>
+    <ProgressBar v-if="project.running" :done="doneCount" :total="project.episodes.length" />
     <p v-if="error" class="error">{{ error }}</p>
 
     <table class="episodes">

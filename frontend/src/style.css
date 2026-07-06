@@ -469,6 +469,43 @@ table.episodes tbody tr:last-child td {
   border-radius: var(--radius);
 }
 
+/* ---------- 批量进度条 ---------- */
+
+.progress-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-2) 0;
+}
+.progress-bar .progress-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+.progress-bar .progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+.progress-bar .progress-text {
+  flex: none;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+.progress-bar.indeterminate .progress-fill {
+  width: 30%;
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+@keyframes progress-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(333%); }
+}
+
 /* ---------- Toast 通知（右上角固定） ---------- */
 
 .toast-container {

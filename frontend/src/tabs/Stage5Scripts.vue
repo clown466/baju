@@ -5,6 +5,7 @@ export default { name: 'Stage5Scripts' }
 import { inject, ref } from 'vue'
 import * as api from '../api'
 import EditorPane from '../components/EditorPane.vue'
+import ProgressBar from '../components/ProgressBar.vue'
 import { useToast } from '../composables/useToast'
 
 const props = defineProps({
@@ -81,6 +82,7 @@ async function saveScript(text) {
     <button :disabled="project.running" @click="startBatch">批量生成全部</button>
     <button v-if="project.running" @click="cancel">取消</button>
     <a :href="api.exportUrl(pid, 'new')" target="_blank">导出新剧汇总</a>
+    <ProgressBar v-if="project.running" indeterminate />
     <p v-if="project.running" class="muted">批量生成中（为保证前后集衔接按集串行）…</p>
     <p v-if="error" class="error">{{ error }}</p>
 
